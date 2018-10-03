@@ -9,6 +9,7 @@
 import UIKit
 import MapKit
 import CoreLocation
+import Alamofire
 
 class MapVC: UIViewController, UIGestureRecognizerDelegate {
     
@@ -17,6 +18,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     let regionRadius: Double = 1000
     var progressLbl: UILabel!
     let spinner = UIActivityIndicatorView()
+    var requestBody = [String: String]()
     // To get the screen size
     let screenSize = UIScreen.main.bounds
     var flowLayout = UICollectionViewFlowLayout()
@@ -94,6 +96,10 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
             togglePullUpView()
         }
         if progressLbl == nil { print("added"); addProgressLbl() }
+        
+        downloadPhotos(forAnnotation: annotation) { (status) in
+            
+        }
     }
     
     private func removePin() {
@@ -138,7 +144,27 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         progressLbl.textAlignment = .center
         collectionView.addSubview(progressLbl)
     }
+    
+    private func downloadPhotos(forAnnotation annotation: DroppablePin, completion: @escaping (_ status: Bool) -> ()) {
+        requestBody = [
+            "method" : flickrAPI.method,
+            "api_key" : flickrAPI.key,
+            "lat" : "42.8",
+            "lon" : "122.8",
+            "radius" : "1",
+            "radius_units" : "mi",
+            "per_page" : "40",
+            "format" : "json",
+            "nojsoncallback" : "1"
+        ]
+        
+        Alamofire.request(flickrAPI.baseUrl!, method: .get, parameters: requestBody, encoding: JSONEncoding.default, headers: nil).responseJSON { (response) in
+            print(response)
+        }
+    }
 }
+
+
 
 extension MapVC: MKMapViewDelegate {
     // Change Pin color & customize it
