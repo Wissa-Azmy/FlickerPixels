@@ -132,6 +132,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
             addSwipe()
             layoutViews()
             addSpinner()
+            addProgressLbl()
         } else {
             pullUpViewHeightConstraint.constant = 1
             layoutViews()
@@ -160,6 +161,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         progressLbl.font = UIFont(name: "Avenir Next", size: 18)
         progressLbl.textColor = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
         progressLbl.textAlignment = .center
+        progressLbl.isHidden = false
         collectionView.addSubview(progressLbl)
     }
     
@@ -168,9 +170,23 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         let lat = annotation.coordinate.latitude
         let lon = annotation.coordinate.longitude
         
-        let url = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(flickrAPI.key)&lat=\(lat)&lon=\(lon)&radius=1&radius_units=mi&per_page=40&format=json&nojsoncallback=1"
+        var urlComponents = URLComponents()
+        urlComponents.scheme = "https"
+        urlComponents.host = "api.flickr.com"
+        urlComponents.path = "/services/rest"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "method", value: "flickr.photos.search"),
+            URLQueryItem(name: "api_key", value: flickrAPI.key),
+            URLQueryItem(name: "lat", value: "\(lat)"),
+            URLQueryItem(name: "lon", value: "\(lon)"),
+            URLQueryItem(name: "radius", value: "1"),
+            URLQueryItem(name: "radius_units", value: "mi"),
+            URLQueryItem(name: "per_page", value: "40"),
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "nojsoncallback", value: "1")
+        ]
 
-        Alamofire.request(url).responseJSON { (response) in
+        Alamofire.request(urlComponents.url!).responseJSON { (response) in
 //            print(response)
             guard let json = response.result.value as? Dictionary<String, AnyObject> else {return}
             let photosDict = json["photos"] as! Dictionary<String, AnyObject>
@@ -194,25 +210,29 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
             self.imageUrlArray.forEach({
                 let url = $0
                 if let cachedImage = self.imageCache.object(forKey: url as NSString) {
-                    self.imagesArray.append(cachedImage)
+                    // Avoid 'main thread checker' error
+                    DispatchQueue.main.async {
+                        self.imagesArray.append(cachedImage)
+                    }
                 }
                 
                 if let imageURL = URL(string: url) {
                     if let imgData = try? Data(contentsOf: imageURL),
                         let image = UIImage(data: imgData) {
                         self.imageCache.setObject(image, forKey: url as NSString)
+                        // Avoid 'main thread checker' error
                         DispatchQueue.main.async {
                             self.imagesArray.append(image)
                         }
                     }
                 }
-                
             })
             completion(true)
         }
     }
     
     private func cancelAllSessions() {
+        self.imageUrlArray = []
         Alamofire.SessionManager.default.session.getTasksWithCompletionHandler { (sessionDataTask, uploadData, downloadDataTask) in
             sessionDataTask.forEach({$0.cancel()})
             downloadDataTask.forEach({$0.cancel()})
