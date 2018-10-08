@@ -13,6 +13,7 @@ import Alamofire
 
 class MapVC: UIViewController, UIGestureRecognizerDelegate {
     
+    typealias completionHandler = (_ status: Bool) -> ()
     var locationManager = CLLocationManager()
     let authorizationStatus = CLLocationManager.authorizationStatus()
     let regionRadius: Double = 1000
@@ -23,6 +24,13 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     let screenSize = UIScreen.main.bounds
     var flowLayout = UICollectionViewFlowLayout()
     var collectionView: UICollectionView!
+    var imageUrlArray = [String]()
+    var imagesArray = [UIImage]() {
+        didSet{
+            progressLbl.text = "\(imagesArray.count)/\(imageUrlArray.count) Photos Downloaded"
+        }
+    }
+    var imageCache = NSCache<NSString, UIImage>()
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var pullUpView: UIView!
@@ -94,16 +102,26 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         
         if pullUpViewHeightConstraint.constant == 1 {
             togglePullUpView()
-        }
-        if progressLbl == nil { print("added"); addProgressLbl() }
+        } else { cancelAllSessions() }
         
-        downloadPhotos(forAnnotation: annotation) { (status) in
-            
+        if progressLbl == nil { addProgressLbl() }
+        
+        downloadPhotosUrls(forAnnotation: annotation) { (status) in
+            if status {
+                DispatchQueue.main.async {
+                    // hide spinner
+                    self.spinner.stopAnimating()
+                    // hide label
+                    self.progressLbl.isHidden = true
+                    // reload collection view
+                }
+                
+            }
         }
     }
     
     private func removePin() {
-        mapView.annotations.forEach({mapView.removeAnnotation($0)})
+        mapView.annotations.forEach( {mapView.removeAnnotation($0)} )
     }
     
     @objc private func togglePullUpView() {
@@ -118,6 +136,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
             pullUpViewHeightConstraint.constant = 1
             layoutViews()
             spinner.stopAnimating()
+            cancelAllSessions()
         }
     }
     
@@ -137,31 +156,69 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     
     private func addProgressLbl() {
         progressLbl = UILabel()
-        progressLbl.frame = CGRect(x: (screenSize.width / 2) - 100, y: (pullUpView.frame.height / 2) + (spinner.frame.width / 2) + 8, width: 200, height: 40)
+        progressLbl.frame = CGRect(x: (screenSize.width / 2) - 150, y: (pullUpView.frame.height / 2) + (spinner.frame.width / 2) + 8, width: 300, height: 40)
         progressLbl.font = UIFont(name: "Avenir Next", size: 18)
-        progressLbl.text = "Wissa"
         progressLbl.textColor = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
         progressLbl.textAlignment = .center
         collectionView.addSubview(progressLbl)
     }
     
-    private func downloadPhotos(forAnnotation annotation: DroppablePin, completion: @escaping (_ status: Bool) -> ()) {
-        requestBody = [
-            "method" : flickrAPI.method,
-            "api_key" : flickrAPI.key,
-            "lat" : "42.8",
-            "lon" : "122.8",
-            "radius" : "1",
-            "radius_units" : "mi",
-            "per_page" : "40",
-            "format" : "json",
-            "nojsoncallback" : "1"
-        ]
+    private func downloadPhotosUrls(forAnnotation annotation: DroppablePin, completion: @escaping completionHandler) {
+
+        let lat = annotation.coordinate.latitude
+        let lon = annotation.coordinate.longitude
         
-        Alamofire.request(flickrAPI.baseUrl!, method: .get, parameters: requestBody, encoding: JSONEncoding.default, headers: nil).responseJSON { (response) in
-            print(response)
+        let url = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(flickrAPI.key)&lat=\(lat)&lon=\(lon)&radius=1&radius_units=mi&per_page=40&format=json&nojsoncallback=1"
+
+        Alamofire.request(url).responseJSON { (response) in
+//            print(response)
+            guard let json = response.result.value as? Dictionary<String, AnyObject> else {return}
+            let photosDict = json["photos"] as! Dictionary<String, AnyObject>
+            let photosDictArray = photosDict["photo"] as! [Dictionary<String, AnyObject>]
+            for photo in photosDictArray {
+                let postUrl = "https://farm\(photo["farm"]!).staticflickr.com/\(photo["server"]!)/\(photo["id"]!)_\(photo["secret"]!)_h_d.jpg"
+                self.imageUrlArray.append(postUrl)
+            }
+            
+            self.retrieveImages(completion: { (success) in
+                if success {
+                    completion(true)
+                }
+            })
         }
     }
+    
+    private func retrieveImages(completion: @escaping completionHandler) {
+        imagesArray = []
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.imageUrlArray.forEach({
+                let url = $0
+                if let cachedImage = self.imageCache.object(forKey: url as NSString) {
+                    self.imagesArray.append(cachedImage)
+                }
+                
+                if let imageURL = URL(string: url) {
+                    if let imgData = try? Data(contentsOf: imageURL),
+                        let image = UIImage(data: imgData) {
+                        self.imageCache.setObject(image, forKey: url as NSString)
+                        DispatchQueue.main.async {
+                            self.imagesArray.append(image)
+                        }
+                    }
+                }
+                
+            })
+            completion(true)
+        }
+    }
+    
+    private func cancelAllSessions() {
+        Alamofire.SessionManager.default.session.getTasksWithCompletionHandler { (sessionDataTask, uploadData, downloadDataTask) in
+            sessionDataTask.forEach({$0.cancel()})
+            downloadDataTask.forEach({$0.cancel()})
+        }
+    }
+    
 }
 
 
