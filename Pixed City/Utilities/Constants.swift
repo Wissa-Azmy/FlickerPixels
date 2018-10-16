@@ -9,10 +9,10 @@
 import Foundation
 
 enum flickrAPI {
+    static let host = "api.flickr.com"
+    static let path = "/services/rest"
     static let key = "17583ddf7ac7107ab979a96cda33afb0"
     static let method = "flickr.photos.search"
-    static let secret = "f193594114955d66"
-    static let baseUrl = URL(string:"https://api.flickr.com/services/rest/")
 }
 
 

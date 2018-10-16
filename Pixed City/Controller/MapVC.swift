@@ -27,7 +27,9 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     var imageUrlArray = [String]()
     var imagesArray = [UIImage]() {
         didSet{
-            progressLbl.text = "\(imagesArray.count)/\(imageUrlArray.count) Photos Downloaded"
+            if progressLbl != nil {
+                progressLbl.text  = "\(imagesArray.count)/\(imageUrlArray.count) Photos Downloaded"
+            }
         }
     }
     var imageCache = NSCache<NSString, UIImage>()
@@ -66,11 +68,11 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         collectionView.register(PhotoCell.self, forCellWithReuseIdentifier: "photoCell")
         collectionView.delegate = self
         collectionView.dataSource = self
-        collectionView.backgroundColor = #colorLiteral(red: 0, green: 1, blue: 0, alpha: 1)
+        collectionView.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         pullUpView.addSubview(collectionView)
     }
 
-    func addDoubleTap() {
+    private func addDoubleTap() {
         // The doubleTap gestureRecognizer will pass itself automatically to the dropPen
         // function this way for it takes a parameter of the same type.
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(dropPen(sender: )))
@@ -79,15 +81,10 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         mapView.addGestureRecognizer(doubleTap)
     }
     
-    private func addSwipe() {
-        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(togglePullUpView))
-        swipe.direction = .down
-        pullUpView.addGestureRecognizer(swipe)
-    }
     
     @objc private func dropPen(sender: UITapGestureRecognizer) {
         // remove previous annotations before adding a new one
-        removePin()
+        removePinAndResetData()
         // Get the touchPoint of the double tap gesture
         let touchPoint = sender.location(in: mapView)
         
@@ -114,15 +111,27 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
                     // hide label
                     self.progressLbl.isHidden = true
                     // reload collection view
+                    self.collectionView.reloadData()
                 }
                 
             }
         }
     }
     
-    private func removePin() {
+    private func removePinAndResetData() {
+        imageUrlArray.removeAll()
+        imagesArray.removeAll()
+        collectionView.reloadData()
         mapView.annotations.forEach( {mapView.removeAnnotation($0)} )
     }
+    
+    
+    private func addSwipe() {
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(togglePullUpView))
+        swipe.direction = .down
+        pullUpView.addGestureRecognizer(swipe)
+    }
+    
     
     @objc private func togglePullUpView() {
         let pullViewHeight = self.view.frame.height / 3
@@ -137,6 +146,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
             pullUpViewHeightConstraint.constant = 1
             layoutViews()
             spinner.stopAnimating()
+            progressLbl.removeFromSuperview()
             cancelAllSessions()
         }
     }
@@ -169,25 +179,9 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
 
         let lat = annotation.coordinate.latitude
         let lon = annotation.coordinate.longitude
+        let url = getUrl(withLon: lon, andLat: lat)
         
-        var urlComponents = URLComponents()
-        urlComponents.scheme = "https"
-        urlComponents.host = "api.flickr.com"
-        urlComponents.path = "/services/rest"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "method", value: "flickr.photos.search"),
-            URLQueryItem(name: "api_key", value: flickrAPI.key),
-            URLQueryItem(name: "lat", value: "\(lat)"),
-            URLQueryItem(name: "lon", value: "\(lon)"),
-            URLQueryItem(name: "radius", value: "1"),
-            URLQueryItem(name: "radius_units", value: "mi"),
-            URLQueryItem(name: "per_page", value: "40"),
-            URLQueryItem(name: "format", value: "json"),
-            URLQueryItem(name: "nojsoncallback", value: "1")
-        ]
-
-        Alamofire.request(urlComponents.url!).responseJSON { (response) in
-//            print(response)
+        Alamofire.request(url).responseJSON { (response) in
             guard let json = response.result.value as? Dictionary<String, AnyObject> else {return}
             let photosDict = json["photos"] as! Dictionary<String, AnyObject>
             let photosDictArray = photosDict["photo"] as! [Dictionary<String, AnyObject>]
@@ -204,8 +198,29 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
+    
+    private func getUrl(withLon lon: CLLocationDegrees, andLat lat: CLLocationDegrees) -> URL {
+        var urlComponents = URLComponents()
+        urlComponents.scheme = "https"
+        urlComponents.host = flickrAPI.host
+        urlComponents.path = flickrAPI.path
+        urlComponents.queryItems = [
+            URLQueryItem(name: "method", value: flickrAPI.method),
+            URLQueryItem(name: "api_key", value: flickrAPI.key),
+            URLQueryItem(name: "lat", value: "\(lat)"),
+            URLQueryItem(name: "lon", value: "\(lon)"),
+            URLQueryItem(name: "radius", value: "1"),
+            URLQueryItem(name: "radius_units", value: "mi"),
+            URLQueryItem(name: "per_page", value: "40"),
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "nojsoncallback", value: "1")
+        ]
+        
+        return urlComponents.url!
+    }
+    
+    
     private func retrieveImages(completion: @escaping completionHandler) {
-        imagesArray = []
         DispatchQueue.global(qos: .userInitiated).async {
             self.imageUrlArray.forEach({
                 let url = $0
@@ -216,14 +231,11 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
                     }
                 }
                 
-                if let imageURL = URL(string: url) {
-                    if let imgData = try? Data(contentsOf: imageURL),
-                        let image = UIImage(data: imgData) {
-                        self.imageCache.setObject(image, forKey: url as NSString)
-                        // Avoid 'main thread checker' error
-                        DispatchQueue.main.async {
-                            self.imagesArray.append(image)
-                        }
+                else if let imageURL = URL(string: url), let imgData = try? Data(contentsOf: imageURL), let image = UIImage(data: imgData) {
+                    self.imageCache.setObject(image, forKey: url as NSString)
+                    // Avoid 'main thread checker' error
+                    DispatchQueue.main.async {
+                        self.imagesArray.append(image)
                     }
                 }
             })
@@ -240,7 +252,6 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
 }
-
 
 
 extension MapVC: MKMapViewDelegate {
@@ -289,11 +300,15 @@ extension MapVC: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 4
+        return imagesArray.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "photoCell", for: indexPath) as! PhotoCell
+        
+        let imageView = UIImageView(image: imagesArray[indexPath.row])
+        cell.addSubview(imageView)
+        
         return cell
     }
 }
