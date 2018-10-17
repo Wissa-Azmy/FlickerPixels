@@ -85,6 +85,35 @@
             </objects>
             <point key="canvasLocation" x="325.60000000000002" y="102.70935960591133"/>
         </scene>
+        <!--Photo Pop Up-->
+        <scene sceneID="bbf-o5-dGz">
+            <objects>
+                <viewController storyboardIdentifier="PhotoPopUP" id="o6H-A8-ZAn" customClass="PhotoPopUp" customModule="Pixed_City" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="gYc-Cu-kIo">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="rOd-Sk-Zdq">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="rOd-Sk-Zdq" firstAttribute="trailing" secondItem="5Yl-Wj-qTx" secondAttribute="trailing" id="6gw-k5-LmA"/>
+                            <constraint firstItem="rOd-Sk-Zdq" firstAttribute="top" secondItem="gYc-Cu-kIo" secondAttribute="top" id="9qc-90-bIH"/>
+                            <constraint firstAttribute="bottom" secondItem="rOd-Sk-Zdq" secondAttribute="bottom" id="I0Y-03-vUq"/>
+                            <constraint firstItem="rOd-Sk-Zdq" firstAttribute="leading" secondItem="5Yl-Wj-qTx" secondAttribute="leading" id="f9z-f8-FzQ"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="5Yl-Wj-qTx"/>
+                    </view>
+                    <connections>
+                        <outlet property="photoImg" destination="rOd-Sk-Zdq" id="mtn-Od-eFo"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="odd-5E-geT" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1263.2" y="102.70935960591133"/>
+        </scene>
     </scenes>
     <resources>
         <image name="locationButton" width="67" height="67"/>

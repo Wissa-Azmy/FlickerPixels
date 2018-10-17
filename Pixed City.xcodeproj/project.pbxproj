@@ -14,6 +14,7 @@
 		297080DD2162153E00D7C312 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 297080DB2162153E00D7C312 /* Main.storyboard */; };
 		297080DF2162154200D7C312 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 297080DE2162154200D7C312 /* Assets.xcassets */; };
 		297080E22162154200D7C312 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 297080E02162154200D7C312 /* LaunchScreen.storyboard */; };
+		29798F4D21772C9100A8070A /* PhotoPopUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29798F4C21772C9100A8070A /* PhotoPopUp.swift */; };
 		299BA9CF216231D2001FDBAE /* DroppablePin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BA9CE216231D2001FDBAE /* DroppablePin.swift */; };
 		F29C5118DCF8BAEC99EC7FF9 /* Pods_Pixed_City.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E2FAC7861FCC4F983C5B8AF /* Pods_Pixed_City.framework */; };
 /* End PBXBuildFile section */
@@ -28,6 +29,7 @@
 		297080DE2162154200D7C312 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		297080E12162154200D7C312 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		297080E32162154200D7C312 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		29798F4C21772C9100A8070A /* PhotoPopUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhotoPopUp.swift; path = "Pixed City/Controller/PhotoPopUp.swift"; sourceTree = "<group>"; };
 		299BA9CE216231D2001FDBAE /* DroppablePin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroppablePin.swift; sourceTree = "<group>"; };
 		2E2FAC7861FCC4F983C5B8AF /* Pods_Pixed_City.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pixed_City.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D3933E5D828915D34313417 /* Pods-Pixed City.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pixed City.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pixed City/Pods-Pixed City.release.xcconfig"; sourceTree = "<group>"; };
@@ -49,6 +51,7 @@
 		297080CB2162153E00D7C312 = {
 			isa = PBXGroup;
 			children = (
+				29798F4C21772C9100A8070A /* PhotoPopUp.swift */,
 				297080D62162153E00D7C312 /* Pixed City */,
 				297080D52162153E00D7C312 /* Products */,
 				F564C71AA50A5A9658071D30 /* Pods */,
@@ -254,6 +257,7 @@
 				291C52692164CBEB003ACCEC /* Constants.swift in Sources */,
 				291C526721638EE5003ACCEC /* PhotoCell.swift in Sources */,
 				297080DA2162153E00D7C312 /* MapVC.swift in Sources */,
+				29798F4D21772C9100A8070A /* PhotoPopUp.swift in Sources */,
 				299BA9CF216231D2001FDBAE /* DroppablePin.swift in Sources */,
 				297080D82162153E00D7C312 /* AppDelegate.swift in Sources */,
 			);

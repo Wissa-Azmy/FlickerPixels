@@ -313,6 +313,14 @@ extension MapVC: UICollectionViewDataSource {
     }
 }
 
+
 extension MapVC: UICollectionViewDelegate {
-    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let popUpVc = storyboard?.instantiateViewController(withIdentifier: "PhotoPopUP") as! PhotoPopUp
+        popUpVc.initData(withImg: imagesArray[indexPath.row])
+        present(popUpVc, animated: true)
+    }
 }
+
+
+
