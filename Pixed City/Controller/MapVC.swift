@@ -55,6 +55,7 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         addDoubleTap()
         
         addCollectionView()
+        registerForPreviewing(with: self, sourceView: collectionView!)
     }
 
     @IBAction func centerMapBtnTapped(_ sender: UIButton) {
@@ -323,4 +324,20 @@ extension MapVC: UICollectionViewDelegate {
 }
 
 
-
+extension MapVC: UIViewControllerPreviewingDelegate {
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
+        if let popUpVC = storyboard?.instantiateViewController(withIdentifier: "PhotoPopUP") as? PhotoPopUp,
+            let indexPath = collectionView.indexPathForItem(at: location),
+            let cell = collectionView.cellForItem(at: indexPath) {
+            popUpVC.initData(withImg: imagesArray[indexPath.row])
+            previewingContext.sourceRect = cell.contentView.frame
+            return popUpVC
+        }
+        
+        return nil
+    }
+    
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
+        show(viewControllerToCommit, sender: self)
+    }
+}
